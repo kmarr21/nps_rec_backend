@@ -31,7 +31,7 @@ app.post('/api/search-restaurants', async (req, res) => {
         const {lat, lng} = geocodeResponse.data.results[0].geometry.location;
         console.log('Location coordinates:', { lat, lng });
 
-        // Snext: build places API new request
+        //build places API new request
         let textQuery = 'restaurants';
         
         // add cuisine prefs
