@@ -45,9 +45,7 @@ app.post('/api/search-restaurants', async (req, res) => {
                     case 'seafood': return 'seafood restaurant';
                     case 'vegetarian': return 'vegetarian restaurant';
                     case 'fastfood': return 'fast food restaurant';
-                    default: return c + ' restaurant';
-                }
-            });
+                    default: return c + ' restaurant';}});
             textQuery = cuisineQueries.join(' OR ');
         }
 
@@ -55,10 +53,7 @@ app.post('/api/search-restaurants', async (req, res) => {
         const searchRequest = {
             textQuery: textQuery,
             locationBias: {
-                circle: {
-                    center: {latitude: lat,longitude: lng},
-                    radius: 5000.0
-                }},
+                circle: {center: {latitude: lat,longitude: lng}, radius: 5000.0}},
             pageSize: 20,
             rankPreference: 'RELEVANCE',
             languageCode: 'en'
@@ -72,8 +67,7 @@ app.post('/api/search-restaurants', async (req, res) => {
                     case 2: return 'PRICE_LEVEL_MODERATE';
                     case 3: return 'PRICE_LEVEL_EXPENSIVE';
                     case 4: return 'PRICE_LEVEL_VERY_EXPENSIVE';
-                    default: return 'PRICE_LEVEL_INEXPENSIVE';}
-            });
+                    default: return 'PRICE_LEVEL_INEXPENSIVE';}});
             searchRequest.priceLevels = priceLevels;
         }
 
@@ -102,18 +96,13 @@ app.post('/api/search-restaurants', async (req, res) => {
             return res.json({
                 restaurants: [],
                 total_found: 0,
-                search_location: {lat: lat, lng: lng, address: geocodeResponse.data.results[0].formatted_address}
-            });
+                search_location: {lat: lat, lng: lng, address: geocodeResponse.data.results[0].formatted_address}});
         }
-
         // process & format restaurants
         let restaurants = data.places;
-
         // sort by rating (highest first) & limit to 15
-        restaurants = restaurants
-            .filter(r => r.rating && r.rating > 0) //only include restaurants w/ ratings!
-            .sort((a, b) => b.rating - a.rating)
-            .slice(0, 15);
+        restaurants = restaurants.filter(r => r.rating && r.rating > 0) //only include restaurants w/ ratings!
+            .sort((a, b) => b.rating - a.rating).slice(0, 15);
 
         // format for frontend
         const formattedRestaurants = restaurants.map(restaurant => ({
@@ -128,19 +117,14 @@ app.post('/api/search-restaurants', async (req, res) => {
         res.json({
             restaurants: formattedRestaurants,
             total_found: formattedRestaurants.length,
-            search_location: {
-                lat: lat,
-                lng: lng,
-                address: geocodeResponse.data.results[0].formatted_address}
+            search_location: {lat: lat, lng: lng, address: geocodeResponse.data.results[0].formatted_address}
         });
 
     } catch (error) {
         console.error('Restaurant search error:', error);
         res.status(500).json({ 
             error: 'Failed to search restaurants',
-            details: error.message 
-        });
-    }
+            details: error.message });}
 });
 
 // map price levels to numbers
@@ -223,14 +207,7 @@ app.post('/api/geocode', async (req, res) => {
 
 // endpoint check
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'healthy', 
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
-    });
-});
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+    res.json({status: 'healthy', timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'});});
+app.listen(PORT, () => {console.log(`Server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);});
