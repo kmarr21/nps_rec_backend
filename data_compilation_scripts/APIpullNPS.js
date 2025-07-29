@@ -72,6 +72,11 @@ function output(array) {
 (async () => {
     try {
         const NParray = await getNPParks();
+        NParray.forEach(park => {
+            if ('parkCode' in park) {
+                park['parkCode'] = park['parkCode'].toUpperCase();
+            }
+        });
         output(NParray);
     } catch (error) {
         console.error('Error: ', error);
