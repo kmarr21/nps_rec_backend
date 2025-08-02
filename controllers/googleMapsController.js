@@ -1,5 +1,6 @@
 const { Client } = require('@googlemaps/google-maps-services-js');
 const client = new Client({});
+require('dotenv').config();
 
 //main restaurant search endpoint (uses NEW places API)
 exports.searchRestaurants = async (req, res) => {
