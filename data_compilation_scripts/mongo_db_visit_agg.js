@@ -1,9 +1,10 @@
 //Mongo module
 const MongoClient = require('mongodb').MongoClient;
 const fs = require('fs');
+require('dotenv').config();
 
 //url from mongodb
-const url = "addMongoURI";
+const url = process.env.MONGODB_URI;
 
 async function main() {
 

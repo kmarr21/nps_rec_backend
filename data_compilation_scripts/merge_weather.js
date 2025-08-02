@@ -1,7 +1,7 @@
 //Mongo module
 const MongoClient = require('mongodb').MongoClient;
 const fs = require('fs');
-require('dotenv').config();
+require('dotenv').config({ path: '/Users/abbyshroba/Documents/CS120/FinalProject/nps_rec_backend/.env' });
 
 //url from mongodb
 const url = process.env.MONGODB_URI;
@@ -15,25 +15,38 @@ async function main() {
         console.log("Connected to Mongo");
 
         const dbo = client.db("NPS");
-        const parks = dbo.collection("parks");
+        const parks = dbo.collection("parksWithVisitation");
 
         const pipeline = [
             {
                 $lookup: {
-                    from: "monthly_visitation",
+                    from: "weather_NPS",
                     localField: "parkCode",
                     foreignField: "parkCode",
-                    as: "visitation"
+                    as: "weatherData"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$weatherData",
+                    preserveNullAndEmptyArrays: true,
                 }
             },
             {
                 $set: {
-                    visitation: "$visitation.monthlyAverages"
+                    weather: {
+                        temperature: "$weatherData.temperature",
+                        humidity: "$weatherData.humidity",
+                        precipitation: "$weatherData.precipitation"
+                    }
                 }
             },
             {
+                $unset: "weatherData"
+            },
+            {
                 $merge: {
-                    into: "parksWithVisitation",
+                    into: "parksAllData",
                     whenMatched: "merge",
                     whenNotMatched: "insert"
                 }
@@ -42,18 +55,6 @@ async function main() {
 
         try {
             await parks.aggregate(pipeline).toArray();
-
-            const parksAndVisitation = await dbo.collection('parksWithVisitation').find({}).toArray();
-
-            const jsonStr = JSON.stringify(parksAndVisitation, null, 2);
-
-            fs.writeFile('parks_and_visitation.json', jsonStr, (err) => {
-                if (err) {
-                    console.error('Error writing to file: ', err);
-                    return;
-                }
-                console.log('Data written to file.');
-            });
         } catch (err) {
             console.error('Aggregation error: ', err);
         }
