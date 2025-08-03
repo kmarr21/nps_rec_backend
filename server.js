@@ -12,7 +12,7 @@ const googleMapsRoutes = require('./routes/googlemaps');
 app.use('/api/restaurants', googleMapsRoutes);
 
 app.get('/', (req, res) => {
-    res.send({ message: 'Welcome to NPS API root' });
+    res.send({ message: 'Welcome to the NPS API root' });
 });
 
 app.listen(PORT, () => {
