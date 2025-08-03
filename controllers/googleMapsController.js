@@ -71,6 +71,8 @@ exports.searchRestaurants = async (req, res) => {
 
         console.log('Places API request:', searchRequest);
 
+        console.log('GOOGLE_MAPS_API_KEY:', process.env.GOOGLE_MAPS_API_KEY);
+
         // MAKE REQUEST to new places api
         const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
             method: 'POST',
