@@ -15,6 +15,12 @@ app.get('/', (req, res) => {
     res.send({ message: 'Welcome to the NPS API root' });
 });
 
+app.post('/api/submit-data', (req, res) => {
+    const receivedData = req.body;
+    console.log('Received data:', receivedData);
+    res.status(200).json({ message: 'Data received successfully!' });
+});
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
