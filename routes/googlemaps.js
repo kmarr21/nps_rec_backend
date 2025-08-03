@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const googleMapsController = require('../controllers/googleMapsController');
 
-router.get('/', (req, res) => { res.json({ message: 'Restaurant finder API is running...' }); });
+router.get('/', (req, res) => { res.send({ message: 'Welcome to the NPS API root' }); });
 
 router.post('/search-restaurants', googleMapsController.searchRestaurants);
 
