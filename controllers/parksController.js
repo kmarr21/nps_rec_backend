@@ -5,6 +5,7 @@ exports.getFiveParks = async (req, res) => {
     try {
         console.log('getFiveParks controller hit');
         const parks = await Park.find().limit(5);
+        console.log('Parks found:', parks);
         res.json(parks);
     } catch (error) {
         console.error("Error fetching parks: ", error);
