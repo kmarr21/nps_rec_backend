@@ -6,13 +6,6 @@ const mongoose = require('mongoose');
 const parkSchema = new mongoose.Schema(
     {
         fullName: String,
-        activities: Array,
-        parkCode: String,
-        visitation: Array,
-        description: String,
-        images: Array,
-        weather: Object
-
     },
     {
         collection: 'parksAllData'
