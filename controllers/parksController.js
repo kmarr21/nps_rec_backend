@@ -1,4 +1,4 @@
-const Park = require('/models/park');
+const Park = require('../models/park');
 
 //Get park data
 exports.getFiveParks = async (req, res) => {
