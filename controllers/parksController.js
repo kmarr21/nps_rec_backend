@@ -1,4 +1,5 @@
 const Park = require('../models/park');
+const mongoose = require('mongoose');
 
 //Get park data
 exports.getFiveParks = async (req, res) => {
