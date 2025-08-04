@@ -4,6 +4,7 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const connectDB = require('./config/db');
 
 app.use(cors());
 app.use(express.json());
@@ -29,7 +30,6 @@ const parkRoutes = require('./routes/parks');
 app.use('/api/parks', parkRoutes);
 
 //Parks database connection
-dotenv.config();
 connectDB();
 
 app.listen(PORT, () => {
