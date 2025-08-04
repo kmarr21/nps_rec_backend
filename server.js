@@ -25,6 +25,11 @@ app.post('/api/submit-data', (req, res) => {
     res.status(200).json({ message: 'Data received successfully!' });
 });
 
+//More sending data to backend testing
+app.get('/api/submit-data', (req, res) => {
+    res.send('This route only accepts POST requests.');
+});
+
 //Park route
 const parkRoutes = require('./routes/parksRoute');
 app.use('/api/parks', parkRoutes);
