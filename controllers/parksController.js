@@ -7,7 +7,6 @@ exports.getFiveParks = async (req, res) => {
     exports.getFiveParks = async (req, res) => {
         try {
             console.log('getFiveParks controller hit');
-            mongoose.set('debug', true);
             const parks = await Park.find().limit(5);
             console.log('Parks found:', parks);
             res.json(parks);
