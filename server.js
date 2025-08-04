@@ -26,7 +26,7 @@ app.post('/api/submit-data', (req, res) => {
 });
 
 //Park route
-const parkRoutes = require('./routes/parks');
+const parkRoutes = require('./routes/parksRoute');
 app.use('/api/parks', parkRoutes);
 
 //Parks database connection
