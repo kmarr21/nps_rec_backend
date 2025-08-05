@@ -77,7 +77,7 @@ async function writeToServer(data,url) {
 
 (async () => {
     try {
-        const weatherData = await getBulkWeatherData(); //Array of parks
+        const weatherData = await getRawWeatherData(); //Array of parks
         var averages = [];
         
         for (const park of weatherData) {
