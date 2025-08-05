@@ -6,9 +6,7 @@ exports.getFiveParks = async (req, res) => {
     try {
         console.log('getFiveParks controller hit');
         mongoose.set('debug', true);
-        const parks = await Park.find({
-            "activities.name": { $in: ["Cross-Coutry Skiing","Flying"] }})
-            .select('activities description fullName images latitude longitude parkCode topics visitation weather');
+        const parks = await Park.find().select('activities description fullName');
         res.json(parks);
     } catch (error) {
         console.error("Error fetching parks: ", error);
