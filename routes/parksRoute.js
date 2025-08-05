@@ -4,5 +4,6 @@ const parksController = require('../controllers/parksController');
 const parkModel = require('../models/park');
 
 router.get('/', parksController.getFiveParks);
+router.post('/recommendations', parksController.getRecommendedParks); // KM ADDED!
 
 module.exports = router;
