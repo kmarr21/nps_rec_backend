@@ -222,6 +222,7 @@ exports.getRecommendedParks = async (req, res) => {
             recommendedParks.push(similarityRank[i].parkInfo);
         }
 
+        console.log(recommendedParks);
         res.json(recommendedParks);
     } catch (error) {
         console.error("Error fetching parks: ", error);
