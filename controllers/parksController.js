@@ -198,6 +198,7 @@ exports.getRecommendedParks = async (req, res) => {
     try {
         console.log('Survey data received:', req.body);
         mongoose.set('debug', true);
+        console.log(typeof (req.body));
 
         const params = readParameters(req.body);
         const parks = await Park.find({
