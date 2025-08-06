@@ -216,3 +216,173 @@ exports.healthCheck = (req, res) => {
         environment: process.env.NODE_ENV || 'development'
     });
 };
+
+// function for park-based restaurant search with map data
+exports.searchRestaurantsNearPark = async (req, res) => {
+    try {
+        const {latitude, longitude, radius, cuisines, prices, rating, openNow} = req.body;
+        console.log('Park restaurant search:', { latitude, longitude, radius, cuisines, prices, rating, openNow });
+
+        if (!latitude || !longitude) {return res.status(400).json({ error: 'Latitude and longitude are required' });}
+        let textQuery = 'restaurants'; // building search query
+        
+        // add cuisine filtering
+        if (cuisines && cuisines.length > 0) {
+            const cuisineQueries = cuisines.map(c => {
+                const cuisineMap = {
+                    'italian': 'italian restaurant',
+                    'mexican': 'mexican restaurant', 
+                    'asian': 'asian restaurant',
+                    'american': 'american restaurant',
+                    'chinese': 'chinese restaurant',
+                    'japanese': 'japanese restaurant',
+                    'thai': 'thai restaurant',
+                    'indian': 'indian restaurant',
+                    'seafood': 'seafood restaurant',
+                    'steakhouse': 'steakhouse',
+                    'pizza': 'pizza restaurant',
+                    'fastfood': 'fast food',
+                    'vegetarian': 'vegetarian restaurant',
+                    'vegan': 'vegan restaurant',
+                    'french': 'french restaurant',
+                    'greek': 'greek restaurant',
+                    'mediterranean': 'mediterranean restaurant',
+                    'korean': 'korean restaurant',
+                    'vietnamese': 'vietnamese restaurant',
+                    'turkish': 'turkish restaurant',
+                    'lebanese': 'lebanese restaurant',
+                    'spanish': 'spanish restaurant',
+                    'brazilian': 'brazilian restaurant',
+                    'barbecue': 'barbecue restaurant',
+                    'middleeastern': 'middle eastern restaurant'};
+                return cuisineMap[c] || (c + ' restaurant');});
+            textQuery = cuisineQueries.join(' OR ');
+        }
+
+        // Build Places API request
+        const searchRequest = {
+            textQuery: textQuery,
+            locationBias: {
+                circle: { center: {latitude: parseFloat(latitude), longitude: parseFloat(longitude)}, 
+                radius: parseFloat(radius) || 15000.0}, // default 15km radius (good for national parks)}??
+            pageSize: 20,
+            rankPreference: 'RELEVANCE',
+            languageCode: 'en'}
+        }
+
+        // add price filtering
+        if (prices && prices.length > 0) {
+            const priceLevels = prices.map(p => {
+                const priceMap = {
+                    1: 'PRICE_LEVEL_INEXPENSIVE',
+                    2: 'PRICE_LEVEL_MODERATE', 
+                    3: 'PRICE_LEVEL_EXPENSIVE',
+                    4: 'PRICE_LEVEL_VERY_EXPENSIVE'};
+                return priceMap[p] || 'PRICE_LEVEL_INEXPENSIVE';});
+            searchRequest.priceLevels = priceLevels;
+        }
+
+        // add open now filtering
+        if (openNow === true) {searchRequest.openNow = true;}
+        console.log('Places API request:', searchRequest);
+
+        // make request to google places API --> NOTE: We need location data for map display
+        const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.location,places.businessStatus,places.regularOpeningHours'},
+            body: JSON.stringify(searchRequest)});
+
+        if (!response.ok) {throw new Error(`Places API error: ${response.status} ${response.statusText}`);}
+        
+        const data = await response.json();
+        console.log('Places API response:', data);
+
+        if (!data.places || data.places.length === 0) {
+            return res.json({
+                restaurants: [],
+                total_found: 0,
+                search_center: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
+                radius: parseFloat(radius) || 15000,
+                map_bounds: {northeast: {lat: parseFloat(latitude) + 0.1, lng: parseFloat(longitude) + 0.1 },
+                    southwest: {lat: parseFloat(latitude) - 0.1, lng: parseFloat(longitude) - 0.1 }}});
+        }
+
+        // process + format restaurants
+        let restaurants = data.places;
+        // filter by rating if specified
+        if (rating && rating > 0) {restaurants = restaurants.filter(r => r.rating && r.rating >= rating);}
+        
+        // ONLY include restaurants that have location data (needed for map)
+        restaurants = restaurants.filter(r => r.location && r.location.latitude && r.location.longitude);
+        
+        // sort by rating (highest first) and limit
+        restaurants = restaurants.filter(r => r.rating && r.rating > 0)
+            .sort((a, b) => b.rating - a.rating)
+            .slice(0, 20); // more results for map display
+
+        // format for frontend!!
+        const formattedRestaurants = restaurants.map(restaurant => ({
+            name: restaurant.displayName?.text || 'Unknown Restaurant',
+            rating: restaurant.rating || 0,
+            price_level: mapPriceLevel(restaurant.priceLevel) || 1,
+            address: restaurant.formattedAddress || 'Address not available',
+            place_id: restaurant.id,
+            cuisine_types: restaurant.types?.filter(type => !['restaurant', 'food', 'establishment', 'point_of_interest'].includes(type)) || [],
+            location: {lat: restaurant.location.latitude, lng: restaurant.location.longitude},
+            business_status: restaurant.businessStatus || 'OPERATIONAL',
+            opening_hours: restaurant.regularOpeningHours?.weekdayDescriptions || []}));
+
+        // calc map bounds to include all restaurants
+        let bounds = {northeast: { lat: parseFloat(latitude), lng: parseFloat(longitude)}, southwest: { lat: parseFloat(latitude), lng: parseFloat(longitude)}};
+
+        if (formattedRestaurants.length > 0) {
+            const lats = formattedRestaurants.map(r => r.location.lat);
+            const lngs = formattedRestaurants.map(r => r.location.lng);
+            
+            bounds = {
+                northeast: {lat: Math.max(...lats, parseFloat(latitude)), lng: Math.max(...lngs, parseFloat(longitude))},
+                southwest: {lat: Math.min(...lats, parseFloat(latitude)), lng: Math.min(...lngs, parseFloat(longitude))}};}
+
+        res.json({
+            restaurants: formattedRestaurants,
+            total_found: formattedRestaurants.length,
+            search_center: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
+            radius: parseFloat(radius) || 15000,
+            map_bounds: bounds});
+
+    } catch (error) {
+        console.error('Park restaurant search error:', error);
+        res.status(500).json({
+            error: 'Failed to search restaurants near park',
+            details: error.message});}
+};
+
+// function to get map embed url for frontend
+exports.getMapEmbedUrl = async (req, res) => {
+    try {
+        const {latitude, longitude, zoom, restaurants} = req.body;
+        if (!latitude || !longitude) {return res.status(400).json({ error: 'Latitude and longitude are required' });}
+
+        // build GM embed url
+        const baseUrl = 'https://www.google.com/maps/embed/v1/view';
+        const params = new URLSearchParams({
+            key: process.env.GOOGLE_MAPS_API_KEY,
+            center: `${latitude},${longitude}`,
+            zoom: zoom || 12,
+            maptype: 'roadmap'});
+
+        const embedUrl = `${baseUrl}?${params.toString()}`;
+        res.json({
+            embed_url: embedUrl,
+            center: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
+            zoom: zoom || 12});
+
+    } catch (error) {
+        console.error('Map embed URL error:', error);
+        res.status(500).json({
+            error: 'Failed to generate map embed URL',
+            details: error.message});}
+};
