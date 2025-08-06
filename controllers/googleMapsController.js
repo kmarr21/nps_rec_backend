@@ -196,7 +196,7 @@ exports.searchRestaurantsNearPark = async (req, res) => {
 
         console.log('Search query:', textQuery);
 
-        // Build NEW Places API request - EXACTLY like working function
+        // Build NEW Places API request
         const searchRequest = {
             textQuery: textQuery,
             locationBias: {
@@ -288,8 +288,8 @@ exports.searchRestaurantsNearPark = async (req, res) => {
 
         console.log('Final restaurants after all filters:', restaurants.length);
 
-        // Format for frontend - NEW API format
-        const formattedRestaurants = restaurants.map(restaurant => {
+        // Format for frontend - FIXED
+        const formattedRestaurants = restaurants.map((restaurant, index) => {
             const formatted = {
                 name: restaurant.displayName?.text || 'Unknown Restaurant',
                 rating: restaurant.rating || 0,
@@ -307,9 +307,9 @@ exports.searchRestaurantsNearPark = async (req, res) => {
                 opening_hours: []
             };
             
-            // Debug first few restaurants
-            if (formattedRestaurants.length < 3) {
-                console.log('Formatted restaurant:', {
+            // FIXED: Use index instead of formattedRestaurants.length
+            if (index < 3) {
+                console.log(`Formatted restaurant ${index + 1}:`, {
                     name: formatted.name,
                     location: formatted.location,
                     address: formatted.address
