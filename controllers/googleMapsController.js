@@ -5,7 +5,7 @@ require('dotenv').config();
 //main restaurant search endpoint (uses NEW places API)
 exports.searchRestaurants = async (req, res) => {
     try {
-        const {location, cuisines, prices, time} = req.body;
+        const { location, cuisines, prices, time } = req.body;
         console.log('Search request:', {location, cuisines, prices, time});
 
         if (!location) {return res.status(400).json({error: 'Location is required'});}
@@ -15,7 +15,7 @@ exports.searchRestaurants = async (req, res) => {
 
         if (geocodeResponse.data.results.length === 0) {return res.status(404).json({error: 'Location not found'});}
 
-        const {lat, lng} = geocodeResponse.data.results[0].geometry.location;
+        const { lat, lng } = geocodeResponse.data.results[0].geometry.location;
         console.log('Location coordinates:', {lat, lng});
 
         //build places API new request
@@ -41,7 +41,7 @@ exports.searchRestaurants = async (req, res) => {
         // request for new places api
         const searchRequest = {
             textQuery: textQuery,
-            locationBias: {circle: {center: {latitude: lat, longitude: lng }, radius: 5000.0}},
+            locationBias: {circle: {center: { latitude: lat, longitude: lng }, radius: 5000.0}},
             pageSize: 20,
             rankPreference: 'RELEVANCE',
             languageCode: 'en'
@@ -55,7 +55,8 @@ exports.searchRestaurants = async (req, res) => {
                     case 2: return 'PRICE_LEVEL_MODERATE';
                     case 3: return 'PRICE_LEVEL_EXPENSIVE';
                     case 4: return 'PRICE_LEVEL_VERY_EXPENSIVE';
-                    default: return 'PRICE_LEVEL_INEXPENSIVE';}
+                    default: return 'PRICE_LEVEL_INEXPENSIVE';
+                }
             });
             searchRequest.priceLevels = priceLevels;
         }
@@ -72,7 +73,7 @@ exports.searchRestaurants = async (req, res) => {
             body: JSON.stringify(searchRequest)
         });
 
-        if (!response.ok) {throw new Error(`Places API error: ${response.status} ${response.statusText}`);}
+        if (!response.ok) { throw new Error(`Places API error: ${response.status} ${response.statusText}`); }
         const data = await response.json();
         console.log('Places API response:', data);
 
@@ -96,8 +97,7 @@ exports.searchRestaurants = async (req, res) => {
             price_level: mapPriceLevel(restaurant.priceLevel) || 1,
             address: restaurant.formattedAddress || 'Address not available',
             place_id: restaurant.id,
-            cuisine_types: restaurant.types?.filter(type => !['restaurant', 'food', 'establishment', 'point_of_interest'].includes(type)) || []
-        }));
+            cuisine_types: restaurant.types?.filter(type => !['restaurant', 'food', 'establishment', 'point_of_interest'].includes(type)) || []}));
 
         res.json({
             restaurants: formattedRestaurants,
@@ -109,8 +109,7 @@ exports.searchRestaurants = async (req, res) => {
         console.error('Restaurant search error:', error);
         res.status(500).json({
             error: 'Failed to search restaurants',
-            details: error.message});
-    }
+            details: error.message});}
 };
 
 // map price levels to numbers
@@ -130,13 +129,12 @@ function mapPriceLevel(priceLevel) {
 exports.autocomplete = async (req, res) => {
     try {
         const { input } = req.body;
-        if (!input || input.length < 2) {return res.json({ predictions: []});}
+        if (!input || input.length < 2) {return res.json({ predictions: [] });}
 
         // use autocomplete
         const autocompleteRequest = {
             input: input,
-            locationRestriction: {
-                rectangle: {low: {latitude: -90, longitude: -180}, high: {latitude: 90, longitude: 180}}},
+            locationRestriction: {rectangle: {low: {latitude: -90, longitude: -180}, high: {latitude: 90, longitude: 180}}},
             languageCode: 'en'
         };
 
@@ -149,7 +147,7 @@ exports.autocomplete = async (req, res) => {
             body: JSON.stringify(autocompleteRequest)
         });
 
-        if (!response.ok) { throw new Error(`Autocomplete API error: ${response.status} ${response.statusText}`); }
+        if (!response.ok) {throw new Error(`Autocomplete API error: ${response.status} ${response.statusText}`);}
         const data = await response.json();
         // format suggestions for frontend
         const predictions = data.suggestions?.map(suggestion => ({
@@ -169,14 +167,13 @@ exports.autocomplete = async (req, res) => {
 exports.geocode = async (req, res) => {
     try {
         const {location} = req.body;
-        if (!location) {return res.status(400).json({error: 'Location is required'});}
+        if (!location) {return res.status(400).json({ error: 'Location is required' }); }
         const response = await client.geocode({params: {address: location, key: process.env.GOOGLE_MAPS_API_KEY}});
-        if (response.data.results.length === 0) {return res.status(404).json({error: 'Location not found'});}
-
+        if (response.data.results.length === 0) {return res.status(404).json({ error: 'Location not found' });}
         const result = response.data.results[0];
-        const {lat, lng}  = result.geometry.location;
+        const {lat, lng} = result.geometry.location;
 
-        res.json({ location: {lat: lat, lng: lng, formatted_address: result.formatted_address}});
+        res.json({location: {lat: lat, lng: lng, formatted_address: result.formatted_address}});
     } catch (error) {
         console.error('Geocoding error:', error);
         res.status(500).json({error: 'Failed to geocode location'});
@@ -189,16 +186,17 @@ exports.healthCheck = (req, res) => {
         environment: process.env.NODE_ENV || 'development'});
 };
 
-// function for park-based restaurant search with map data
+// ATTEMPT 4: legacy API that actually works with location (seeing if this works a bit better...)
 exports.searchRestaurantsNearPark = async (req, res) => {
     try {
         const {latitude, longitude, radius, cuisines, prices, rating} = req.body;
-        console.log('Park restaurant search:', { latitude, longitude, radius, cuisines, prices, rating});
+        console.log('Park restaurant search:', { latitude, longitude, radius, cuisines, prices, rating });
+        if (!latitude || !longitude) {return res.status(400).json({ error: 'Latitude and longitude are required' });}
 
-        if (!latitude || !longitude) {return res.status(400).json({error: 'Latitude and longitude are required'});}
-        let textQuery = 'restaurants'; // building search query
+        // legacy text search API
+        let query = 'restaurants';
         
-        // add cuisine filtering
+        // add cuisine filtering to query
         if (cuisines && cuisines.length > 0) {
             const cuisineQueries = cuisines.map(c => {
                 const cuisineMap = {
@@ -217,119 +215,176 @@ exports.searchRestaurantsNearPark = async (req, res) => {
                     'vegetarian': 'vegetarian restaurant',
                     'vegan': 'vegan restaurant',
                     'french': 'french restaurant',
-                    'greek': 'greek restaurant',
-                    'mediterranean': 'mediterranean restaurant',
-                    'korean': 'korean restaurant',
-                    'vietnamese': 'vietnamese restaurant',
-                    'turkish': 'turkish restaurant',
-                    'lebanese': 'lebanese restaurant',
-                    'spanish': 'spanish restaurant',
-                    'brazilian': 'brazilian restaurant',
-                    'barbecue': 'barbecue restaurant',
-                    'middleeastern': 'middle eastern restaurant'};
-                return cuisineMap[c] || (c + ' restaurant');});
-            textQuery = cuisineQueries.join(' OR ');
+                    'greek': 'greek restaurant'};
+                return cuisineMap[c] || (c + ' restaurant');
+            });
+            query = cuisineQueries.join(' OR ');
         }
 
-        // Places API request --> CORRECTED FORMAT FROM OFFICIAL DOCS
-        const searchRequest = {
-            textQuery: textQuery,
-            locationBias: {
-                circle: {
-                    center: {
-                        latitude: parseFloat(latitude),
-                        longitude: parseFloat(longitude)},
-                    radius: parseFloat(radius) || 50000.0
-                }
-            },
-            pageSize: 20,  // CORRECTED: use pageSize not maxResultCount
-            rankPreference: 'RELEVANCE',
-            languageCode: 'en'
-        };
+        // build legacy API URL
+        const textSearchUrl = 'https://maps.googleapis.com/maps/api/place/textsearch/json';
+        const params = new URLSearchParams({
+            query: query,
+            location: `${parseFloat(latitude)},${parseFloat(longitude)}`,
+            radius: Math.min(parseFloat(radius) || 50000, 50000),
+            type: 'restaurant',
+            key: process.env.GOOGLE_MAPS_API_KEY});
 
-        // add price filtering
-        if (prices && prices.length > 0) {
-            const priceLevels = prices.map(p => {
-                const priceMap = {
-                    1: 'PRICE_LEVEL_INEXPENSIVE',
-                    2: 'PRICE_LEVEL_MODERATE', 
-                    3: 'PRICE_LEVEL_EXPENSIVE',
-                    4: 'PRICE_LEVEL_VERY_EXPENSIVE'};
-                return priceMap[p] || 'PRICE_LEVEL_INEXPENSIVE';});
-            searchRequest.priceLevels = priceLevels;
-        }
+        console.log('Legacy API request:', `${textSearchUrl}?${params.toString()}`);
 
-        console.log('Places API request:', searchRequest);
-
-        // make request to google places API --> NOTE: We need location data for map display
-        const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
-                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.location,places.businessStatus,places.regularOpeningHours'},
-            body: JSON.stringify(searchRequest)});
-
+        // make request to legacy API
+        const response = await fetch(`${textSearchUrl}?${params.toString()}`);
+        
         if (!response.ok) {throw new Error(`Places API error: ${response.status} ${response.statusText}`);}
         
         const data = await response.json();
-        console.log('Places API response:', data);
+        console.log('Legacy API response status:', data.status);
 
-        if (!data.places || data.places.length === 0) {
+        if (data.status !== 'OK' || !data.results || data.results.length === 0) {
             return res.json({
                 restaurants: [],
                 total_found: 0,
-                search_center: {lat: parseFloat(latitude), lng: parseFloat(longitude)},
+                search_center: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
                 radius: parseFloat(radius) || 50000,
-                map_bounds: {northeast: {lat: parseFloat(latitude) + 0.1, lng: parseFloat(longitude) + 0.1},
-                    southwest: {lat: parseFloat(latitude) - 0.1, lng: parseFloat(longitude) - 0.1 }}});}
+                map_bounds: {
+                    northeast: {lat: parseFloat(latitude) + 0.1, lng: parseFloat(longitude) + 0.1},
+                    southwest: {lat: parseFloat(latitude) - 0.1, lng: parseFloat(longitude) - 0.1}}});
+        }
 
-        // process + format restaurants
-        let restaurants = data.places;
+        // process restaurants
+        let restaurants = data.results;
         // filter by rating if specified
         if (rating && rating > 0) {restaurants = restaurants.filter(r => r.rating && r.rating >= rating);}
-        
-        // ONLY include restaurants that have location data (needed for map)
-        restaurants = restaurants.filter(r => r.location && r.location.latitude && r.location.longitude);
-        
-        // sort by rating (highest first) and limit
-        restaurants = restaurants.filter(r => r.rating && r.rating > 0)
-            .sort((a, b) => b.rating - a.rating)
-            .slice(0, 20); // more results for map display
+        // filter by price level if specified  
+        if (prices && prices.length > 0) {restaurants = restaurants.filter(r => r.price_level && prices.includes(r.price_level));}
+        // sort by rating and limit results
+        restaurants = restaurants.filter(r => r.rating && r.rating > 0).sort((a, b) => b.rating - a.rating).slice(0, 20);
 
-        // format for frontend!!
+        // format for frontend (mapping legacy API fields to frontend expectations?? Not sure this is best way to do this....)
         const formattedRestaurants = restaurants.map(restaurant => ({
-            name: restaurant.displayName?.text || 'Unknown Restaurant',
+            name: restaurant.name || 'Unknown Restaurant',
             rating: restaurant.rating || 0,
-            price_level: mapPriceLevel(restaurant.priceLevel) || 1,
-            address: restaurant.formattedAddress || 'Address not available',
-            place_id: restaurant.id,
+            price_level: restaurant.price_level || 1,
+            address: restaurant.formatted_address || 'Address not available',
+            place_id: restaurant.place_id,
             cuisine_types: restaurant.types?.filter(type => !['restaurant', 'food', 'establishment', 'point_of_interest'].includes(type)) || [],
-            location: {lat: restaurant.location.latitude, lng: restaurant.location.longitude},
-            business_status: restaurant.businessStatus || 'OPERATIONAL',
-            opening_hours: restaurant.regularOpeningHours?.weekdayDescriptions || []}));
+            location: {
+                lat: restaurant.geometry?.location?.lat || parseFloat(latitude),
+                lng: restaurant.geometry?.location?.lng || parseFloat(longitude)},
+            business_status: restaurant.business_status || 'OPERATIONAL',
+            opening_hours: restaurant.opening_hours?.weekday_text || []
+        }));
 
-        // calc map bounds to include all restaurants
-        let bounds = {northeast: {lat: parseFloat(latitude), lng: parseFloat(longitude)}, southwest: {lat: parseFloat(latitude), lng: parseFloat(longitude)}};
+        // calc map bounds?...
+        let bounds = {
+            northeast: {lat: parseFloat(latitude), lng: parseFloat(longitude)},
+            southwest: {lat: parseFloat(latitude), lng: parseFloat(longitude)}
+        };
 
         if (formattedRestaurants.length > 0) {
             const lats = formattedRestaurants.map(r => r.location.lat);
             const lngs = formattedRestaurants.map(r => r.location.lng);
             
-            bounds = {northeast: {lat: Math.max(...lats, parseFloat(latitude)), lng: Math.max(...lngs, parseFloat(longitude))},
-                southwest: {lat: Math.min(...lats, parseFloat(latitude)), lng: Math.min(...lngs, parseFloat(longitude))}};}
+            bounds = {
+                northeast: {
+                    lat: Math.max(...lats, parseFloat(latitude)),
+                    lng: Math.max(...lngs, parseFloat(longitude))},
+                southwest: {
+                    lat: Math.min(...lats, parseFloat(latitude)),
+                    lng: Math.min(...lngs, parseFloat(longitude))}
+            };
+        }
+
         res.json({
             restaurants: formattedRestaurants,
             total_found: formattedRestaurants.length,
-            search_center: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
+            search_center: {lat: parseFloat(latitude), lng: parseFloat(longitude)},
             radius: parseFloat(radius) || 50000,
-            map_bounds: bounds});
+            map_bounds: bounds
+        });
 
     } catch (error) {
         console.error('Park restaurant search error:', error);
         res.status(500).json({
             error: 'Failed to search restaurants near park',
             details: error.message});}
+};
+
+// map price levels to numbers
+function mapPriceLevel(priceLevel) {
+    if (!priceLevel) return 1;
+    const priceMap = {
+        'PRICE_LEVEL_FREE': 1,
+        'PRICE_LEVEL_INEXPENSIVE': 1,
+        'PRICE_LEVEL_MODERATE': 2,
+        'PRICE_LEVEL_EXPENSIVE': 3,
+        'PRICE_LEVEL_VERY_EXPENSIVE': 4
+    };
+    return priceMap[priceLevel] || 1;
+}
+
+// autocomplete endpoint for searching/matchign locations
+exports.autocomplete = async (req, res) => {
+    try {
+        const {input} = req.body;
+        if (!input || input.length < 2) {return res.json({ predictions: []});}
+
+        // use autocomplete
+        const autocompleteRequest = {
+            input: input,
+            locationRestriction: {rectangle: {low: {latitude: -90, longitude: -180}, high: {latitude: 90, longitude: 180}}},
+            languageCode: 'en'
+        };
+
+        const response = await fetch('https://places.googleapis.com/v1/places:autocomplete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
+                'X-Goog-FieldMask': 'suggestions.placePrediction.place,suggestions.placePrediction.placeId,suggestions.placePrediction.text'},
+            body: JSON.stringify(autocompleteRequest)
+        });
+
+        if (!response.ok) {throw new Error(`Autocomplete API error: ${response.status} ${response.statusText}`);}
+        const data = await response.json();
+        // format suggestions for frontend
+        const predictions = data.suggestions?.map(suggestion => ({
+            place_id: suggestion.placePrediction?.placeId,
+            description: suggestion.placePrediction?.text?.text,
+            structured_formatting: {
+                main_text: suggestion.placePrediction?.text?.text?.split(',')[0] || '',
+                secondary_text: suggestion.placePrediction?.text?.text?.split(',').slice(1).join(',').trim() || ''}})) || [];
+
+        res.json({ predictions });
+
+    } catch (error) {
+        console.error('Autocomplete error:', error);
+        res.status(500).json({error: 'Failed to get autocomplete suggestions', details: error.message});
+    }
+};
+
+// geocoding endpoint
+exports.geocode = async (req, res) => {
+    try {
+        const {location} = req.body;
+        if (!location) {return res.status(400).json({error: 'Location is required'});}
+        const response = await client.geocode({params: {address: location, key: process.env.GOOGLE_MAPS_API_KEY}});
+        if (response.data.results.length === 0) {return res.status(404).json({error: 'Location not found'});}
+
+        const result = response.data.results[0];
+        const {lat, lng} = result.geometry.location;
+
+        res.json({location: {lat: lat, lng: lng, formatted_address: result.formatted_address}});
+    } catch (error) {
+        console.error('Geocoding error:', error);
+        res.status(500).json({ error: 'Failed to geocode location' });
+    }
+};
+
+// endpoint check
+exports.healthCheck = (req, res) => {
+    res.json({status: 'healthy', timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'});
 };
 
 // function to get map embed url for frontend
@@ -347,8 +402,9 @@ exports.getMapEmbedUrl = async (req, res) => {
             maptype: 'roadmap'});
 
         const embedUrl = `${baseUrl}?${params.toString()}`;
-        res.json({embed_url: embedUrl,
-            center: {lat: parseFloat(latitude), lng: parseFloat(longitude)},
+        res.json({
+            embed_url: embedUrl,
+            center: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
             zoom: zoom || 12});
 
     } catch (error) {
