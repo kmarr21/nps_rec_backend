@@ -6,19 +6,17 @@ require('dotenv').config();
 exports.searchRestaurants = async (req, res) => {
     try {
         const { location, cuisines, prices, time } = req.body;
-        console.log('Search request:', { location, cuisines, prices, time });
+        console.log('Search request:', {location, cuisines, prices, time});
 
         if (!location) { return res.status(400).json({ error: 'Location is required' }); }
 
         // first: get coords from location using geocoding API
-        const geocodeResponse = await client.geocode({ params: { address: location, key: process.env.GOOGLE_MAPS_API_KEY } });
+        const geocodeResponse = await client.geocode({params: { address: location, key: process.env.GOOGLE_MAPS_API_KEY}});
 
-        if (geocodeResponse.data.results.length === 0) {
-            return res.status(404).json({ error: 'Location not found' });
-        }
+        if (geocodeResponse.data.results.length === 0) {return res.status(404).json({error: 'Location not found'});}
 
-        const { lat, lng } = geocodeResponse.data.results[0].geometry.location;
-        console.log('Location coordinates:', { lat, lng });
+        const {lat, lng} = geocodeResponse.data.results[0].geometry.location;
+        console.log('Location coordinates:', {lat, lng});
 
         //build places API new request
         let textQuery = 'restaurants';
@@ -34,8 +32,7 @@ exports.searchRestaurants = async (req, res) => {
                     case 'seafood': return 'seafood restaurant';
                     case 'vegetarian': return 'vegetarian restaurant';
                     case 'fastfood': return 'fast food restaurant';
-                    default: return c + ' restaurant';
-                }
+                    default: return c + ' restaurant';}
             });
             textQuery = cuisineQueries.join(' OR ');
         }
@@ -43,10 +40,8 @@ exports.searchRestaurants = async (req, res) => {
         // request for new places api
         const searchRequest = {
             textQuery: textQuery,
-            locationBias: {
-                circle: { center: { latitude: lat, longitude: lng }, radius: 5000.0 }
-            },
-            pageSize: 20,
+            locationBias: {circle: {center: {latitude: lat, longitude: lng}, radius: 5000.0}},
+            maxResultCount: 20,
             rankPreference: 'RELEVANCE',
             languageCode: 'en'
         };
@@ -59,15 +54,14 @@ exports.searchRestaurants = async (req, res) => {
                     case 2: return 'PRICE_LEVEL_MODERATE';
                     case 3: return 'PRICE_LEVEL_EXPENSIVE';
                     case 4: return 'PRICE_LEVEL_VERY_EXPENSIVE';
-                    default: return 'PRICE_LEVEL_INEXPENSIVE';
-                }
+                    default: return 'PRICE_LEVEL_INEXPENSIVE';}
             });
             searchRequest.priceLevels = priceLevels;
         }
 
         // time-based filtering (not sure if this will work...)
         // . . . need probably a bit of work here
-        if (time && time !== '') { searchRequest.openNow = true; }
+        if (time && time !== '') {searchRequest.openNow = true;}
 
         console.log('Places API request:', searchRequest);
 
@@ -79,12 +73,11 @@ exports.searchRestaurants = async (req, res) => {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
-                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id'
-            },
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id'},
             body: JSON.stringify(searchRequest)
         });
 
-        if (!response.ok) { throw new Error(`Places API error: ${response.status} ${response.statusText}`); }
+        if (!response.ok) {throw new Error(`Places API error: ${response.status} ${response.statusText}`);}
         const data = await response.json();
         console.log('Places API response:', data);
 
@@ -92,8 +85,7 @@ exports.searchRestaurants = async (req, res) => {
             return res.json({
                 restaurants: [],
                 total_found: 0,
-                search_location: { lat: lat, lng: lng, address: geocodeResponse.data.results[0].formatted_address }
-            });
+                search_location: {lat: lat, lng: lng, address: geocodeResponse.data.results[0].formatted_address}});
         }
         // process & format restaurants
         let restaurants = data.places;
@@ -114,16 +106,13 @@ exports.searchRestaurants = async (req, res) => {
         res.json({
             restaurants: formattedRestaurants,
             total_found: formattedRestaurants.length,
-            search_location: { lat: lat, lng: lng, address: geocodeResponse.data.results[0].formatted_address }
+            search_location: {lat: lat, lng: lng, address: geocodeResponse.data.results[0].formatted_address}
         });
-
     } catch (error) {
         console.error('Restaurant search error:', error);
         res.status(500).json({
             error: 'Failed to search restaurants',
-            details: error.message
-        });
-    }
+            details: error.message});}
 };
 
 // map price levels to numbers
@@ -143,17 +132,12 @@ function mapPriceLevel(priceLevel) {
 exports.autocomplete = async (req, res) => {
     try {
         const { input } = req.body;
-        if (!input || input.length < 2) { return res.json({ predictions: [] }); }
+        if (!input || input.length < 2) {return res.json({predictions: []});}
 
         // use autocomplete
         const autocompleteRequest = {
             input: input,
-            locationRestriction: {
-                rectangle: {
-                    low: { latitude: -90, longitude: -180 },
-                    high: { latitude: 90, longitude: 180 }
-                }
-            },
+            locationRestriction: {rectangle: {low: { latitude: -90, longitude: -180 }, high: { latitude: 90, longitude: 180 }}},
             languageCode: 'en'
         };
 
@@ -162,12 +146,11 @@ exports.autocomplete = async (req, res) => {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
-                'X-Goog-FieldMask': 'suggestions.placePrediction.place,suggestions.placePrediction.placeId,suggestions.placePrediction.text'
-            },
+                'X-Goog-FieldMask': 'suggestions.placePrediction.place,suggestions.placePrediction.placeId,suggestions.placePrediction.text'},
             body: JSON.stringify(autocompleteRequest)
         });
 
-        if (!response.ok) { throw new Error(`Autocomplete API error: ${response.status} ${response.statusText}`); }
+        if (!response.ok) {throw new Error(`Autocomplete API error: ${response.status} ${response.statusText}`);}
         const data = await response.json();
         // format suggestions for frontend
         const predictions = data.suggestions?.map(suggestion => ({
@@ -175,55 +158,45 @@ exports.autocomplete = async (req, res) => {
             description: suggestion.placePrediction?.text?.text,
             structured_formatting: {
                 main_text: suggestion.placePrediction?.text?.text?.split(',')[0] || '',
-                secondary_text: suggestion.placePrediction?.text?.text?.split(',').slice(1).join(',').trim() || ''
-            }
-        })) || [];
-
+                secondary_text: suggestion.placePrediction?.text?.text?.split(',').slice(1).join(',').trim() || ''}})) || [];
         res.json({ predictions });
 
     } catch (error) {
         console.error('Autocomplete error:', error);
-        res.status(500).json({ error: 'Failed to get autocomplete suggestions', details: error.message });
+        res.status(500).json({error: 'Failed to get autocomplete suggestions', details: error.message});
     }
 };
 
 // geocoding endpoint
 exports.geocode = async (req, res) => {
     try {
-        const { location } = req.body;
-        if (!location) { return res.status(400).json({ error: 'Location is required' }); }
-
-        const response = await client.geocode({ params: { address: location, key: process.env.GOOGLE_MAPS_API_KEY } });
-
-        if (response.data.results.length === 0) {
-            return res.status(404).json({ error: 'Location not found' });
-        }
+        const {location} = req.body;
+        if (!location) {return res.status(400).json({error: 'Location is required'});}
+        const response = await client.geocode({params: {address: location, key: process.env.GOOGLE_MAPS_API_KEY}});
+        if (response.data.results.length === 0) {return res.status(404).json({error: 'Location not found'});}
 
         const result = response.data.results[0];
-        const { lat, lng } = result.geometry.location;
+        const {at, lng} = result.geometry.location;
 
-        res.json({ location: { lat: lat, lng: lng, formatted_address: result.formatted_address } });
+        res.json({location: {lat: lat, lng: lng, formatted_address: result.formatted_address}});
     } catch (error) {
         console.error('Geocoding error:', error);
-        res.status(500).json({ error: 'Failed to geocode location' });
-    }
+        res.status(500).json({error: 'Failed to geocode location'});}
 };
 
 // endpoint check
 exports.healthCheck = (req, res) => {
-    res.json({
-        status: 'healthy', timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'
-    });
+    res.json({status: 'healthy', timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'});
 };
 
-// function for park-based restaurant search with map data
+// function for park-based restaurant search with map data - FIXED VERSION
 exports.searchRestaurantsNearPark = async (req, res) => {
     try {
         const {latitude, longitude, radius, cuisines, prices, rating, openNow} = req.body;
-        console.log('Park restaurant search:', { latitude, longitude, radius, cuisines, prices, rating, openNow });
+        console.log('Park restaurant search:', {latitude, longitude, radius, cuisines, prices, rating, openNow});
 
-        if (!latitude || !longitude) {return res.status(400).json({ error: 'Latitude and longitude are required' });}
+        if (!latitude || !longitude) {return res.status(400).json({error: 'Latitude and longitude are required'});}
         let textQuery = 'restaurants'; // building search query
         
         // add cuisine filtering
@@ -259,16 +232,15 @@ exports.searchRestaurantsNearPark = async (req, res) => {
             textQuery = cuisineQueries.join(' OR ');
         }
 
-        // Build Places API request
+        // build Places API request (CORRECTED THIS!!)
         const searchRequest = {
             textQuery: textQuery,
             locationBias: {
-                circle: { center: {latitude: parseFloat(latitude), longitude: parseFloat(longitude)}, 
-                radius: parseFloat(radius) || 15000.0}, // default 15km radius (good for national parks)}??
-            pageSize: 20,
+                circle: {center: {latitude: parseFloat(latitude), longitude: parseFloat(longitude)},vradius: parseFloat(radius) || 50000.0}},
+            maxResultCount: 20,  //UPDATED name here, match non-legacy updated api version per docs
             rankPreference: 'RELEVANCE',
-            languageCode: 'en'}
-        }
+            languageCode: 'en'
+        };
 
         // add price filtering
         if (prices && prices.length > 0) {

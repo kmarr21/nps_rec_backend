@@ -10,7 +10,7 @@ exports.getFiveParks = async (req, res) => {
         res.json(parks);
     } catch (error) {
         console.error("Error fetching parks: ", error);
-        res.status(500).json({ error: 'failed to fetch five parks' });
+        res.status(500).json({error: 'failed to fetch five parks'});
     }
 };
 
@@ -24,6 +24,6 @@ exports.getRecommendedParks = async (req, res) => {
         res.json(parks);
     } catch (error) {
         console.error("Error fetching parks: ", error);
-        res.status(500).json({ error: 'failed to fetch parks' });
+        res.status(500).json({error: 'failed to fetch parks'});
     }
 };
