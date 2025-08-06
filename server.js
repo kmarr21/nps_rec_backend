@@ -11,12 +11,12 @@ app.use(express.json());
 
 //Test connection
 app.get('/', (req, res) => {
-    res.send({message: 'Welcome to the NPS API root'});
+    res.send({ message: 'Welcome to the NPS API root' });
 });
 
-// NEW: API key endpoint for frontend
+// API key endpoint for frontend
 app.get('/api/config/maps-key', (req, res) => {
-    res.json({ apiKey: process.env.GOOGLE_MAPS_API_KEY});
+    res.json({ apiKey: process.env.GOOGLE_MAPS_API_KEY });
 });
 
 //Google maps api connection
