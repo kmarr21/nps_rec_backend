@@ -153,7 +153,7 @@ exports.searchRestaurantsNearPark = async (req, res) => {
         //building NEW Places API request
         const searchRequest = {
             includedTypes: ['restaurant'],
-            maxResultCount: 10,
+            maxResultCount: 20,
             locationRestriction: {
                 circle: {
                     center: {
