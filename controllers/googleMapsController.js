@@ -26,7 +26,7 @@ exports.searchRestaurantsNearPark = async (req, res) => {
 
         const lat = parseFloat(latitude);
         const lng = parseFloat(longitude);
-        const searchRadius = parseFloat(radius) || 25000;
+        const searchRadius = parseFloat(radius) || 30000;
 
         console.log('Parsed coordinates:', { lat, lng, searchRadius });
 
@@ -76,7 +76,7 @@ exports.searchRestaurantsNearPark = async (req, res) => {
             return res.json({
                 restaurants: [],
                 total_found: 0,
-                search_center: { lat, lng },
+                search_center: {lat, lng},
                 radius: searchRadius
             });
         }
@@ -90,7 +90,7 @@ exports.searchRestaurantsNearPark = async (req, res) => {
                 address: restaurant.formattedAddress || 'Address not available',
                 place_id: restaurant.id,
                 cuisine_types: restaurant.types?.filter(type => !['restaurant', 'food', 'establishment', 'point_of_interest'].includes(type)) || [],
-                location: { lat: restaurant.location.latitude, lng: restaurant.location.longitude },
+                location: {lat: restaurant.location.latitude, lng: restaurant.location.longitude},
                 business_status: restaurant.businessStatus || 'OPERATIONAL',
                 opening_hours: []
             };
