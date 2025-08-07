@@ -18,20 +18,20 @@ function mapPriceLevel(priceLevel) {
 // main restaurant search endpoint (for restaurant-example.html)
 exports.searchRestaurants = async (req, res) => {
     try {
-        const { location, cuisines, prices, time } = req.body;
+        const { location, prices, time } = req.body;
         console.log('=== RESTAURANT SEARCH DEBUG ===');
-        console.log('Search request:', {location, cuisines, prices, time});
+        console.log('Search request:', { location, prices, time });
 
-        if (!location) {return res.status(400).json({error: 'Location is required'}); }
+        if (!location) { return res.status(400).json({ error: 'Location is required' }); }
 
         // get coords from location using geocoding API
         console.log('Geocoding location:', location);
-        const geocodeResponse = await client.geocode({params: {address: location, key: process.env.GOOGLE_MAPS_API_KEY}});
+        const geocodeResponse = await client.geocode({ params: { address: location, key: process.env.GOOGLE_MAPS_API_KEY } });
 
-        if (geocodeResponse.data.results.length === 0) {return res.status(404).json({ error: 'Location not found'});}
+        if (geocodeResponse.data.results.length === 0) { return res.status(404).json({ error: 'Location not found' }); }
 
-        const {lat, lng} = geocodeResponse.data.results[0].geometry.location;
-        console.log('Geocoded coordinates:', {lat, lng});
+        const { lat, lng } = geocodeResponse.data.results[0].geometry.location;
+        console.log('Geocoded coordinates:', { lat, lng });
 
         // build search query
         let textQuery = 'restaurants';
@@ -45,14 +45,16 @@ exports.searchRestaurants = async (req, res) => {
                     case 'seafood': return 'seafood restaurant';
                     case 'vegetarian': return 'vegetarian restaurant';
                     case 'fastfood': return 'fast food restaurant';
-                    default: return c + ' restaurant';}});
+                    default: return c + ' restaurant';
+                }
+            });
             textQuery = cuisineQueries.join(' OR ');
         }
 
         // build NEW Places API request
         const searchRequest = {
             textQuery: textQuery,
-            locationBias: {circle: {center: {latitude: lat, longitude: lng}, radius: 15000.0}},
+            locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: 15000.0 } },
             pageSize: 20,
             rankPreference: 'RELEVANCE',
             languageCode: 'en'
@@ -66,7 +68,9 @@ exports.searchRestaurants = async (req, res) => {
                     case 2: return 'PRICE_LEVEL_MODERATE';
                     case 3: return 'PRICE_LEVEL_EXPENSIVE';
                     case 4: return 'PRICE_LEVEL_VERY_EXPENSIVE';
-                    default: return 'PRICE_LEVEL_INEXPENSIVE';}});
+                    default: return 'PRICE_LEVEL_INEXPENSIVE';
+                }
+            });
             searchRequest.priceLevels = priceLevels;
         }
 
@@ -78,12 +82,15 @@ exports.searchRestaurants = async (req, res) => {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
-                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id'},
-            body: JSON.stringify(searchRequest)});
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id'
+            },
+            body: JSON.stringify(searchRequest)
+        });
 
-        if (!response.ok) { 
+        if (!response.ok) {
             console.log('Places API error response:', response.status, response.statusText);
-            throw new Error(`Places API error: ${response.status} ${response.statusText}`);}
+            throw new Error(`Places API error: ${response.status} ${response.statusText}`);
+        }
 
         const data = await response.json();
         console.log('Places API response places count:', data.places?.length || 0);
@@ -92,7 +99,8 @@ exports.searchRestaurants = async (req, res) => {
             return res.json({
                 restaurants: [],
                 total_found: 0,
-                search_location: {lat: lat, lng: lng, address: geocodeResponse.data.results[0].formatted_address}});
+                search_location: { lat: lat, lng: lng, address: geocodeResponse.data.results[0].formatted_address }
+            });
         }
 
         // process restaurants
@@ -115,24 +123,26 @@ exports.searchRestaurants = async (req, res) => {
         res.json({
             restaurants: formattedRestaurants,
             total_found: formattedRestaurants.length,
-            search_location: {lat: lat, lng: lng, address: geocodeResponse.data.results[0].formatted_address}});
+            search_location: { lat: lat, lng: lng, address: geocodeResponse.data.results[0].formatted_address }
+        });
 
     } catch (error) {
         console.error('Restaurant search error:', error);
         res.status(500).json({
             error: 'Failed to search restaurants',
-            details: error.message});
+            details: error.message
+        });
     }
 };
 
 // park-based restaurant search (for restaurant-selector.html) --> NEW PLACES API ONLY
 exports.searchRestaurantsNearPark = async (req, res) => {
     try {
-        const {latitude, longitude, radius, cuisines, prices, rating} = req.body;
+        const { latitude, longitude, radius, cuisines, prices, rating } = req.body;
         console.log('=== PARK RESTAURANT SEARCH DEBUG ===');
-        console.log('Park search request:', {latitude, longitude, radius, cuisines, prices, rating});
+        console.log('Park search request:', { latitude, longitude, radius, cuisines, prices, rating });
 
-        if (!latitude || !longitude) {return res.status(400).json({error: 'Latitude and longitude are required'});}
+        if (!latitude || !longitude) { return res.status(400).json({ error: 'Latitude and longitude are required' }); }
 
         const lat = parseFloat(latitude);
         const lng = parseFloat(longitude);
@@ -146,7 +156,7 @@ exports.searchRestaurantsNearPark = async (req, res) => {
             const cuisineQueries = cuisines.map(c => {
                 const cuisineMap = {
                     'italian': 'italian restaurant',
-                    'mexican': 'mexican restaurant', 
+                    'mexican': 'mexican restaurant',
                     'asian': 'asian restaurant',
                     'american': 'american restaurant',
                     'chinese': 'chinese restaurant',
@@ -160,7 +170,8 @@ exports.searchRestaurantsNearPark = async (req, res) => {
                     'vegetarian': 'vegetarian restaurant',
                     'vegan': 'vegan restaurant',
                     'french': 'french restaurant',
-                    'greek': 'greek restaurant'};
+                    'greek': 'greek restaurant'
+                };
                 return cuisineMap[c] || (c + ' restaurant');
             });
             textQuery = cuisineQueries.join(' OR ');
@@ -171,7 +182,7 @@ exports.searchRestaurantsNearPark = async (req, res) => {
         //building NEW Places API request
         const searchRequest = {
             textQuery: textQuery,
-            locationBias: {circle: {center: {latitude: lat, longitude: lng}, radius: searchRadius}},
+            locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: searchRadius } },
             pageSize: 20,
             rankPreference: 'RELEVANCE',
             languageCode: 'en'
@@ -200,7 +211,8 @@ exports.searchRestaurantsNearPark = async (req, res) => {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
-                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.location,places.businessStatus'},
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.location,places.businessStatus'
+            },
             body: JSON.stringify(searchRequest)
         });
 
@@ -211,7 +223,7 @@ exports.searchRestaurantsNearPark = async (req, res) => {
             console.log('Places API error response:', errorText);
             throw new Error(`Places API error: ${response.status} ${response.statusText}`);
         }
-        
+
         const data = await response.json();
         console.log('Places API response places count:', data.places?.length || 0);
 
@@ -222,7 +234,8 @@ exports.searchRestaurantsNearPark = async (req, res) => {
                 total_found: 0,
                 search_center: { lat, lng },
                 radius: searchRadius,
-                map_bounds: {northeast: {lat: lat + 0.05, lng: lng + 0.05}, southwest: {lat: lat - 0.05, lng: lng - 0.05}}});
+                map_bounds: { northeast: { lat: lat + 0.05, lng: lng + 0.05 }, southwest: { lat: lat - 0.05, lng: lng - 0.05 } }
+            });
         }
 
         // process restaurants
@@ -232,12 +245,13 @@ exports.searchRestaurantsNearPark = async (req, res) => {
         // filter by rating if specified
         if (rating && rating > 0) {
             restaurants = restaurants.filter(r => r.rating && r.rating >= rating);
-            console.log('After rating filter:', restaurants.length);}
-        
+            console.log('After rating filter:', restaurants.length);
+        }
+
         // only include restaurants that have location data (needed for map)
         restaurants = restaurants.filter(r => r.location && r.location.latitude && r.location.longitude);
         console.log('After location filter:', restaurants.length);
-        
+
         // sort by rating and limit
         restaurants = restaurants.filter(r => r.rating && r.rating > 0).sort((a, b) => b.rating - a.rating).slice(0, 20);
         console.log('Final restaurants after all filters:', restaurants.length);
@@ -251,31 +265,34 @@ exports.searchRestaurantsNearPark = async (req, res) => {
                 address: restaurant.formattedAddress || 'Address not available',
                 place_id: restaurant.id,
                 cuisine_types: restaurant.types?.filter(type => !['restaurant', 'food', 'establishment', 'point_of_interest'].includes(type)) || [],
-                location: {lat: restaurant.location.latitude, lng: restaurant.location.longitude},
+                location: { lat: restaurant.location.latitude, lng: restaurant.location.longitude },
                 business_status: restaurant.businessStatus || 'OPERATIONAL',
                 opening_hours: []
             };
-            
+
             // use index instead of formattedRestaurants.length????? (still unsure on this part, wonky)
             if (index < 3) {
                 console.log(`Formatted restaurant ${index + 1}:`, {
                     name: formatted.name,
                     location: formatted.location,
-                    address: formatted.address});}
+                    address: formatted.address
+                });
+            }
             return formatted;
         });
 
         // calc map bounds
-        let bounds = {northeast: {lat, lng}, southwest: {lat, lng}};
+        let bounds = { northeast: { lat, lng }, southwest: { lat, lng } };
 
         if (formattedRestaurants.length > 0) {
             const lats = formattedRestaurants.map(r => r.location.lat);
             const lngs = formattedRestaurants.map(r => r.location.lng);
-            
+
             bounds = {
-                northeast: {lat: Math.max(...lats, lat), lng: Math.max(...lngs, lng)},
-                southwest: {lat: Math.min(...lats, lat), lng: Math.min(...lngs, lng)}};
-            
+                northeast: { lat: Math.max(...lats, lat), lng: Math.max(...lngs, lng) },
+                southwest: { lat: Math.min(...lats, lat), lng: Math.min(...lngs, lng) }
+            };
+
             console.log('Calculated map bounds:', bounds);
         }
 
@@ -284,14 +301,14 @@ exports.searchRestaurantsNearPark = async (req, res) => {
         res.json({
             restaurants: formattedRestaurants,
             total_found: formattedRestaurants.length,
-            search_center: {lat, lng},
+            search_center: { lat, lng },
             radius: searchRadius,
             map_bounds: bounds
         });
 
     } catch (error) {
         console.error('Park restaurant search error:', error);
-        res.status(500).json({error: 'Failed to search restaurants near park', details: error.message});
+        res.status(500).json({ error: 'Failed to search restaurants near park', details: error.message });
     }
 };
 
@@ -299,13 +316,13 @@ exports.searchRestaurantsNearPark = async (req, res) => {
 exports.autocomplete = async (req, res) => {
     try {
         const { input } = req.body;
-        if (!input || input.length < 2) { 
-            return res.json({ predictions: [] }); 
+        if (!input || input.length < 2) {
+            return res.json({ predictions: [] });
         }
 
         const autocompleteRequest = {
             input: input,
-            locationRestriction: {rectangle: {low: {latitude: -90, longitude: -180}, high: {latitude: 90, longitude: 180}}},
+            locationRestriction: { rectangle: { low: { latitude: -90, longitude: -180 }, high: { latitude: 90, longitude: 180 } } },
             languageCode: 'en'
         };
 
@@ -314,25 +331,28 @@ exports.autocomplete = async (req, res) => {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
-                'X-Goog-FieldMask': 'suggestions.placePrediction.place,suggestions.placePrediction.placeId,suggestions.placePrediction.text'},
+                'X-Goog-FieldMask': 'suggestions.placePrediction.place,suggestions.placePrediction.placeId,suggestions.placePrediction.text'
+            },
             body: JSON.stringify(autocompleteRequest)
         });
 
         if (!response.ok) { throw new Error(`Autocomplete API error: ${response.status} ${response.statusText}`); }
-        
+
         const data = await response.json();
         const predictions = data.suggestions?.map(suggestion => ({
             place_id: suggestion.placePrediction?.placeId,
             description: suggestion.placePrediction?.text?.text,
             structured_formatting: {
                 main_text: suggestion.placePrediction?.text?.text?.split(',')[0] || '',
-                secondary_text: suggestion.placePrediction?.text?.text?.split(',').slice(1).join(',').trim() || ''}})) || [];
+                secondary_text: suggestion.placePrediction?.text?.text?.split(',').slice(1).join(',').trim() || ''
+            }
+        })) || [];
 
         res.json({ predictions });
 
     } catch (error) {
         console.error('Autocomplete error:', error);
-        res.status(500).json({error: 'Failed to get autocomplete suggestions', details: error.message});
+        res.status(500).json({ error: 'Failed to get autocomplete suggestions', details: error.message });
     }
 };
 
@@ -340,46 +360,50 @@ exports.autocomplete = async (req, res) => {
 exports.geocode = async (req, res) => {
     try {
         const { location } = req.body;
-        if (!location) {return res.status(400).json({ error: 'Location is required'});}
-        const response = await client.geocode({params: {address: location, key: process.env.GOOGLE_MAPS_API_KEY} });
-        if (response.data.results.length === 0) {return res.status(404).json({ error: 'Location not found' });}
+        if (!location) { return res.status(400).json({ error: 'Location is required' }); }
+        const response = await client.geocode({ params: { address: location, key: process.env.GOOGLE_MAPS_API_KEY } });
+        if (response.data.results.length === 0) { return res.status(404).json({ error: 'Location not found' }); }
         const result = response.data.results[0];
-        const {lat, lng} = result.geometry.location;
-        res.json({location: {lat: lat, lng: lng, formatted_address: result.formatted_address}});
+        const { lat, lng } = result.geometry.location;
+        res.json({ location: { lat: lat, lng: lng, formatted_address: result.formatted_address } });
     } catch (error) {
         console.error('Geocoding error:', error);
-        res.status(500).json({error: 'Failed to geocode location'});}
+        res.status(500).json({ error: 'Failed to geocode location' });
+    }
 };
 
 //healthcheck endpoint
 exports.healthCheck = (req, res) => {
     res.json({
-        status: 'healthy', 
+        status: 'healthy',
         timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development'});
+        environment: process.env.NODE_ENV || 'development'
+    });
 };
 
 // map embed URL endpoint
 exports.getMapEmbedUrl = async (req, res) => {
     try {
-        const {latitude, longitude, zoom} = req.body;
-        if (!latitude || !longitude) {return res.status(400).json({error: 'Latitude and longitude are required'});}
+        const { latitude, longitude, zoom } = req.body;
+        if (!latitude || !longitude) { return res.status(400).json({ error: 'Latitude and longitude are required' }); }
 
         const baseUrl = 'https://www.google.com/maps/embed/v1/view';
         const params = new URLSearchParams({
             key: process.env.GOOGLE_MAPS_API_KEY,
             center: `${latitude},${longitude}`,
             zoom: zoom || 12,
-            maptype: 'roadmap'});
+            maptype: 'roadmap'
+        });
 
         const embedUrl = `${baseUrl}?${params.toString()}`;
         res.json({
             embed_url: embedUrl,
-            center: {lat: parseFloat(latitude), lng: parseFloat(longitude)},
-            zoom: zoom || 12});
+            center: { lat: parseFloat(latitude), lng: parseFloat(longitude) },
+            zoom: zoom || 12
+        });
 
     } catch (error) {
         console.error('Map embed URL error:', error);
-        res.status(500).json({error: 'Failed to generate map embed URL', details: error.message});
+        res.status(500).json({ error: 'Failed to generate map embed URL', details: error.message });
     }
 };
