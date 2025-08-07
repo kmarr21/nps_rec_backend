@@ -192,8 +192,7 @@ exports.searchRestaurantsNearPark = async (req, res) => {
                 restaurants: [],
                 total_found: 0,
                 search_center: { lat, lng },
-                radius: searchRadius,
-                map_bounds: { northeast: { lat: lat + 0.05, lng: lng + 0.05 }, southwest: { lat: lat - 0.05, lng: lng - 0.05 } }
+                radius: searchRadius
             });
         }
 
