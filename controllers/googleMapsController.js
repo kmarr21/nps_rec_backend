@@ -152,22 +152,28 @@ exports.searchRestaurantsNearPark = async (req, res) => {
 
         //building NEW Places API request
         const searchRequest = {
-            textQuery: 'restaurant',
-            locationBias: { circle: { center: { latitude: lat, longitude: lng }, radius: searchRadius } },
-            pageSize: 10,
-            rankPreference: 'RELEVANCE',
-            languageCode: 'en'
+            includedTypes: ['restaurant'],
+            maxResultCount: 10,
+            locationRestriction: {
+                circle: {
+                    center: {
+                        latitude: lat,
+                        longitude: lng
+                    },
+                    radius: searchRadius
+                }
+            }
         };
 
         console.log('NEW Places API request:', JSON.stringify(searchRequest, null, 2));
 
         //make request to NEW Places API
-        const response = await fetch('https://places.googleapis.com/v1/places:searchText', {
+        const response = await fetch('https://places.googleapis.com/v1/places:searchNearby', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
-                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.id,places.location,places.businessStatus'
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.id,places.location,places.businessStatus,places.types'
             },
             body: JSON.stringify(searchRequest)
         });
