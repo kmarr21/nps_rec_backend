@@ -39,7 +39,7 @@ Node.js API server that provides national park recommendations and restaurant se
 ### Models
 - `models/park.js` => park data model/schema
 
-## Tech Stack
+## Stack
 - Node.js + Express
 - Google Maps Places API (New version)
 - National Park Service API integration
