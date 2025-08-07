@@ -49,13 +49,11 @@ function readParameters(params) {
     if (params.climate === 'no preference') result.climate = null;
     else if (params.climate === 'cool/cold') result.climate = 0;
     else if (params.climate === 'mild') result.climate = 1;
-    else results.climate = 2;
+    else result.climate = 2;
     //Numerical code for crowds.
     if (params.crowds === 'want solitude') result.crowds = 0;
     else if (params.crowds === 'moderate crowds') result.crowds = 1;
     else result.crowds = 2;
-
-    console.log("MADE IT HERE");
 
     return result;
 }
