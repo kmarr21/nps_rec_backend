@@ -55,6 +55,8 @@ function readParameters(params) {
     else if (params.crowds === 'moderate crowds') result.crowds = 1;
     else result.crowds = 2;
 
+    console.log("MADE IT HERE");
+
     return result;
 }
 
@@ -198,7 +200,6 @@ exports.getRecommendedParks = async (req, res) => {
     try {
         console.log('Survey data received:', req.body);
         mongoose.set('debug', true);
-        console.log(typeof (req.body));
 
         const params = readParameters(req.body);
         
