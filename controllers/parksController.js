@@ -147,8 +147,10 @@ function getCrowdScore(park, startDate, endDate, crowdVal) {
     let end = new Date(endDate);
     var endMonth = end.getMonth();
     var crowdSum = 0;
+    console.log(park.visitation);
     for (let i = startMonth; i <= endMonth; i++) {
         let index = String(i);
+        console.log(index);
         crowdSum += park.visitation[0][index];
     }
     let crowdAverage = Math.floor(crowdSum / (endMonth - startMonth + 1));
