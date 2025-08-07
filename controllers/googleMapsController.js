@@ -18,9 +18,9 @@ function mapPriceLevel(priceLevel) {
 // main restaurant search endpoint (for restaurant-example.html)
 exports.searchRestaurants = async (req, res) => {
     try {
-        const { location, prices, time } = req.body;
+        const { location, cuisines, prices, time } = req.body;
         console.log('=== RESTAURANT SEARCH DEBUG ===');
-        console.log('Search request:', { location, prices, time });
+        console.log('Search request:', { location, cuisines, prices, time });
 
         if (!location) { return res.status(400).json({ error: 'Location is required' }); }
 
@@ -138,9 +138,9 @@ exports.searchRestaurants = async (req, res) => {
 // park-based restaurant search (for restaurant-selector.html) --> NEW PLACES API ONLY
 exports.searchRestaurantsNearPark = async (req, res) => {
     try {
-        const { latitude, longitude, radius, cuisines, prices, rating } = req.body;
+        const { latitude, longitude, radius, prices, rating } = req.body;
         console.log('=== PARK RESTAURANT SEARCH DEBUG ===');
-        console.log('Park search request:', { latitude, longitude, radius, cuisines, prices, rating });
+        console.log('Park search request:', { latitude, longitude, radius, prices, rating });
 
         if (!latitude || !longitude) { return res.status(400).json({ error: 'Latitude and longitude are required' }); }
 
@@ -149,35 +149,6 @@ exports.searchRestaurantsNearPark = async (req, res) => {
         const searchRadius = parseFloat(radius) || 25000;
 
         console.log('Parsed coordinates:', { lat, lng, searchRadius });
-
-        // build search query
-        let textQuery = 'restaurants';
-        if (cuisines && cuisines.length > 0) {
-            const cuisineQueries = cuisines.map(c => {
-                const cuisineMap = {
-                    'italian': 'italian restaurant',
-                    'mexican': 'mexican restaurant',
-                    'asian': 'asian restaurant',
-                    'american': 'american restaurant',
-                    'chinese': 'chinese restaurant',
-                    'japanese': 'japanese restaurant',
-                    'thai': 'thai restaurant',
-                    'indian': 'indian restaurant',
-                    'seafood': 'seafood restaurant',
-                    'steakhouse': 'steakhouse',
-                    'pizza': 'pizza restaurant',
-                    'fastfood': 'fast food',
-                    'vegetarian': 'vegetarian restaurant',
-                    'vegan': 'vegan restaurant',
-                    'french': 'french restaurant',
-                    'greek': 'greek restaurant'
-                };
-                return cuisineMap[c] || (c + ' restaurant');
-            });
-            textQuery = cuisineQueries.join(' OR ');
-        }
-
-        console.log('Search query:', textQuery);
 
         //building NEW Places API request
         const searchRequest = {
@@ -211,7 +182,7 @@ exports.searchRestaurantsNearPark = async (req, res) => {
             headers: {
                 'Content-Type': 'application/json',
                 'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
-                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.types,places.id,places.location,places.businessStatus'
+                'X-Goog-FieldMask': 'places.displayName,places.formattedAddress,places.rating,places.priceLevel,places.id,places.location,places.businessStatus'
             },
             body: JSON.stringify(searchRequest)
         });
