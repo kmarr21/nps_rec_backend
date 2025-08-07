@@ -202,7 +202,7 @@ exports.getRecommendedParks = async (req, res) => {
         const params = readParameters(req.body);
         
         var query;
-        if (params.topics.length !== 0) {
+        if (params.topics !== null) {
             query = {
                 $or: [
                     { 'activities.name': { $in: params.activities } },
