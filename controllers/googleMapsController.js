@@ -138,17 +138,17 @@ exports.searchRestaurants = async (req, res) => {
 // park-based restaurant search (for restaurant-selector.html) --> NEW PLACES API ONLY
 exports.searchRestaurantsNearPark = async (req, res) => {
     try {
-        const { latitude, longitude, radius } = req.body;
+        const {latitude, longitude, radius, prices, rating} = req.body;
         console.log('=== PARK RESTAURANT SEARCH DEBUG ===');
-        console.log('Park search request:', { latitude, longitude, radius });
+        console.log('Park search request:', {latitude, longitude, radius, prices, rating});
 
-        if (!latitude || !longitude) { return res.status(400).json({ error: 'Latitude and longitude are required' }); }
+        if (!latitude || !longitude) { return res.status(400).json({error: 'Latitude and longitude are required'});}
 
         const lat = parseFloat(latitude);
         const lng = parseFloat(longitude);
         const searchRadius = parseFloat(radius) || 25000;
 
-        console.log('Parsed coordinates:', { lat, lng, searchRadius });
+        console.log('Parsed coordinates:', {lat, lng, searchRadius});
 
         //building NEW Places API request
         const searchRequest = {
@@ -156,14 +156,24 @@ exports.searchRestaurantsNearPark = async (req, res) => {
             maxResultCount: 20,
             locationRestriction: {
                 circle: {
-                    center: {
-                        latitude: lat,
-                        longitude: lng
-                    },
-                    radius: searchRadius
-                }
+                    center: {latitude: lat, longitude: lng},
+                    radius: searchRadius}
             }
         };
+
+        // add price filtering if provided
+        if (prices && prices.length > 0 && prices.length < 4) {
+            const priceLevels = prices.map(p => {
+                switch (p) {
+                    case 1: return 'PRICE_LEVEL_INEXPENSIVE';
+                    case 2: return 'PRICE_LEVEL_MODERATE';
+                    case 3: return 'PRICE_LEVEL_EXPENSIVE';
+                    case 4: return 'PRICE_LEVEL_VERY_EXPENSIVE';
+                    default: return 'PRICE_LEVEL_INEXPENSIVE';
+                }
+            });
+            searchRequest.priceLevels = priceLevels;
+        }
 
         console.log('NEW Places API request:', JSON.stringify(searchRequest, null, 2));
 
@@ -189,21 +199,27 @@ exports.searchRestaurantsNearPark = async (req, res) => {
         const data = await response.json();
 
         const restaurantsList = (data.places || []).filter(place =>
-            place.location?.latitude && place.location?.longitude
-        );
+            place.location?.latitude && place.location?.longitude);
 
-        if (!data.places || data.places.length === 0) {
-            console.log('No places found, returning empty result');
+        // apply rating filter if specified
+        let filteredRestaurants = restaurantsList;
+        if (rating && rating > 0) {
+            filteredRestaurants = restaurantsList.filter(restaurant => restaurant.rating && restaurant.rating >= rating);
+            console.log(`Filtered ${restaurantsList.length} restaurants to ${filteredRestaurants.length} with rating >= ${rating}`);
+        }
+
+        if (!data.places || data.places.length === 0 || filteredRestaurants.length === 0) {
+            console.log('No places found or all filtered out, returning empty result');
             return res.json({
                 restaurants: [],
                 total_found: 0,
-                search_center: { lat, lng },
+                search_center: {lat, lng},
                 radius: searchRadius
             });
         }
 
         // format for frontend
-        const formattedRestaurants = restaurantsList.map((restaurant, index) => {
+        const formattedRestaurants = filteredRestaurants.map((restaurant, index) => {
             const formatted = {
                 name: restaurant.displayName?.text || 'Unknown Restaurant',
                 rating: restaurant.rating || 0,
