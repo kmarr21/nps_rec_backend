@@ -2,7 +2,7 @@
 
 Node.js API server that provides national park recommendations and restaurant search functionality.
 
-## What it does
+## Overview
 - Takes user preferences and returns personalized national park recommendations
 - Searches for restaurants near parks using Google Maps Places API (New)
 - Serves park data with weather forecasts and visitor crowd predictions
