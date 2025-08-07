@@ -141,17 +141,16 @@ function getClimateScore(parkTemps, tripLength, climateVal) {
 
 //Calculates a park score for how closely it will resemble the preferred crowds during the time of travel
 function getCrowdScore(park, startDate, endDate, crowdVal) {
+    //NPNH park does not have visitation data so there is no array to read from. Return 0.5 for this park.
+    if (park.visitation.length === 0) return 0.5;
     //Calculate the average crowd for this park given the date range for the trip
     let start = new Date(startDate);
     var startMonth = start.getMonth();
     let end = new Date(endDate);
     var endMonth = end.getMonth();
     var crowdSum = 0;
-    console.log("PARK CODE IS",park.parkCode);
-    console.log(park.visitation);
     for (let i = startMonth; i <= endMonth; i++) {
         let index = String(i);
-        console.log(index);
         crowdSum += park.visitation[0][index];
     }
     let crowdAverage = Math.floor(crowdSum / (endMonth - startMonth + 1));
