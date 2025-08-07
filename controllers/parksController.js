@@ -196,7 +196,7 @@ exports.getFiveParks = async (req, res) => {
 
 exports.getRecommendedParks = async (req, res) => {
     try {
-        console.log('Survey data received:', req.body);
+        console.log('Survey data recieved:', req.body);
         mongoose.set('debug', true);
 
         const params = readParameters(req.body);
@@ -213,7 +213,7 @@ exports.getRecommendedParks = async (req, res) => {
         else {
             query = { 'activities.name': { $in: params.activities } };
         }
-        const parks = await Park.find(query).select('activities description fullName images latitude longitude parkCode topics visitation weather').toArray();
+        const parks = await Park.find(query).select('activities description fullName images latitude longitude parkCode topics visitation weather').lean();
 
         var similarityRank = [];
         for (const park of parks) {
