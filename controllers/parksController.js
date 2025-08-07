@@ -213,7 +213,7 @@ exports.getRecommendedParks = async (req, res) => {
         else {
             query = { 'activities.name': { $in: params.activities } };
         }
-        const parks = await Park.find(query).select('activitities description fullName images latitude longitude parkCode topics visitation weather').toArray();
+        const parks = await Park.find(query).select('activities description fullName images latitude longitude parkCode topics visitation weather').toArray();
 
         var similarityRank = [];
         for (const park of parks) {
