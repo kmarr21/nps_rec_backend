@@ -64,6 +64,10 @@ exports.searchRestaurantsNearPark = async (req, res) => {
         }
 
         const data = await response.json();
+        console.log('=== GOOGLE PLACES API RESPONSE DEBUG ===');
+        console.log('Total places returned by Google:', data.places?.length || 0);
+        console.log('Requested maxResultCount:', 50);
+        console.log('=== END GOOGLE RESPONSE DEBUG ===');
 
         const restaurantsList = (data.places || []).filter(place => place.location?.latitude && place.location?.longitude);
 
@@ -110,7 +114,7 @@ exports.searchRestaurantsNearPark = async (req, res) => {
 
             bounds = {
                 northeast: {lat: Math.max(...lats, lat), lng: Math.max(...lngs, lng)},
-                southwest: {lat: Math.min(...lngs, lng), lng: Math.min(...lngs, lng)}
+                southwest: {lat: Math.min(...lats, lat), lng: Math.min(...lngs, lng)}
             };
 
             console.log('Calculated map bounds:', bounds);
