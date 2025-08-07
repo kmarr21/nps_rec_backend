@@ -201,12 +201,20 @@ exports.getRecommendedParks = async (req, res) => {
         console.log(typeof (req.body));
 
         const params = readParameters(req.body);
-        const parks = await Park.find({
-            $or: [
-                { 'activities.name': { $in: req.body.activities } },
-                { 'topics.name': { $in: req.body.topics } }
-            ]
-        }).select('activitites description fullName images latitude longitude parkCode topics visitation weather').toArray();
+        
+        var query;
+        if (params.topics.length !== 0) {
+            query = {
+                $or: [
+                    { 'activities.name': { $in: params.activities } },
+                    { 'topics.name': { $in: params.topics } }
+                ]
+            };
+        }
+        else {
+            query = { 'activities.name': { $in: params.activities } };
+        }
+        const parks = await Park.find(query).select('activitites description fullName images latitude longitude parkCode topics visitation weather').toArray();
 
         var similarityRank = [];
         for (const park of parks) {
