@@ -49,7 +49,7 @@ function readParameters(params) {
     if (params.climate === 'no preference') result.climate = null;
     else if (params.climate === 'cool/cold') result.climate = 0;
     else if (params.climate === 'mild') result.climate = 1;
-    else results.climate = 2;
+    else result.climate = 2;
     //Numerical code for crowds.
     if (params.crowds === 'want solitude') result.crowds = 0;
     else if (params.crowds === 'moderate crowds') result.crowds = 1;
@@ -141,6 +141,8 @@ function getClimateScore(parkTemps, tripLength, climateVal) {
 
 //Calculates a park score for how closely it will resemble the preferred crowds during the time of travel
 function getCrowdScore(park, startDate, endDate, crowdVal) {
+    //NPNH park does not have visitation data so there is no array to read from. Return 0.5 for this park.
+    if (park.visitation.length === 0) return 0.5;
     //Calculate the average crowd for this park given the date range for the trip
     let start = new Date(startDate);
     var startMonth = start.getMonth();
@@ -186,7 +188,7 @@ exports.getFiveParks = async (req, res) => {
     try {
         console.log('getFiveParks controller hit');
         mongoose.set('debug', true);
-        const parks = await Park.find().limit(10).select('activitites description fullName images latitude longitude parkCode topics visitation weather');
+        const parks = await Park.find().limit(10).select('activities description fullName images latitude longitude parkCode topics visitation weather');
         res.json(parks);
     } catch (error) {
         console.error("Error fetching parks: ", error);
@@ -196,17 +198,24 @@ exports.getFiveParks = async (req, res) => {
 
 exports.getRecommendedParks = async (req, res) => {
     try {
-        console.log('Survey data received:', req.body);
+        console.log('Survey data recieved:', req.body);
         mongoose.set('debug', true);
-        console.log(typeof (req.body));
 
         const params = readParameters(req.body);
-        const parks = await Park.find({
-            $or: [
-                { 'activities.name': { $in: req.body.activities } },
-                { 'topics.name': { $in: req.body.topics } }
-            ]
-        }).select('activitites description fullName images latitude longitude parkCode topics visitation weather').toArray();
+
+        var query;
+        if (params.topics !== null) {
+            query = {
+                $or: [
+                    { 'activities.name': { $in: params.activities } },
+                    { 'topics.name': { $in: params.topics } }
+                ]
+            };
+        }
+        else {
+            query = { 'activities.name': { $in: params.activities } };
+        }
+        const parks = await Park.find(query).select('activities description fullName images latitude longitude parkCode topics visitation weather').lean();
 
         var similarityRank = [];
         for (const park of parks) {
@@ -223,7 +232,6 @@ exports.getRecommendedParks = async (req, res) => {
             recommendedParks.push(similarityRank[i].parkInfo);
         }
 
-        console.log(recommendedParks);
         res.json(recommendedParks);
     } catch (error) {
         console.error("Error fetching parks: ", error);
